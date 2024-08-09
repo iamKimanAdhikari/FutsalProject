@@ -240,7 +240,7 @@ const registerTurf = asyncHandler( async (req, res) => {
 
 const editOwnerInfo = asyncHandler(async (req, res) => {
     const { fullName, username, phone_no, password } = req.body;
-    const { id } = req.owner; // Assuming owner id is obtained from the authenticated owner
+    const { id } = req.owner;
 
     if ([fullName, username, phone_no].some((field) => field?.trim() === "")) {
         return res.status(400).json(
@@ -248,7 +248,6 @@ const editOwnerInfo = asyncHandler(async (req, res) => {
         );
     }
 
-    // Hash the password if it's being updated
     let hashedPassword;
     if (password) {
         hashedPassword = await passwordHasher(password);

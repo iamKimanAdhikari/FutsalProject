@@ -38,10 +38,8 @@ const deleteTurfbyId = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     try {
-        // Attempt to delete the turf by ID
         const result = await pool.query("DELETE FROM turfs WHERE id = $1 RETURNING *;", [id]);
 
-        // If no rows were affected, the turf ID doesn't exist
         if (result.rowCount === 0) {
             return res.status(404).json(
                 new ApiResponse(404, null, "Turf not found")

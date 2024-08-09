@@ -18,7 +18,6 @@ const userRegister = asyncHandler(async (req, res) => {
         return res.status(400).json(
             new ApiResponse(400, "All fields are required")
         )
-        // throw new ApiError(400, "All fields are required")
     }
 
     // checking for existing user
@@ -27,7 +26,6 @@ const userRegister = asyncHandler(async (req, res) => {
         return res.status(409).json(
             new ApiResponse(409, "User with given username or email or phone number already exists.")
         )
-        // throw new ApiError(409, "User with given username or email or phone number already exists.")
     }
     const hashedPassword = await passwordHasher(password);
     // inserting new user to database
@@ -42,7 +40,6 @@ const userRegister = asyncHandler(async (req, res) => {
         return res.status(500).json(
             new ApiResponse(500, 'Cannot insert data to database.')
         )
-        // throw new ApiError(500, 'Cannot insert data to database.');
     }
 
     return res.status(200).json(
@@ -134,13 +131,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     if (!oldRefreshToken) {
         throw new ApiError(401, "Refresh Token not found.")
     }
-    // console.log(oldRefreshToken);
 
     try {
         const decodedToken = jwt.verify(oldRefreshToken, process.env.REFRESH_TOKEN_SECRET);
-        // console.log(decodedToken);
         const user = await pool.query('select * from users where id = $1', [decodedToken.id]);
-        // console.log(user.rows[0].refreshtoken)
 
         if (!user.rowCount) {
             throw new ApiError(401, 'invalid refresh token');
@@ -192,11 +186,59 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     }
 })
 
+const editUserInfo = asyncHandler(async (req, res) => {
+    const { fullName, username, phone_no, password } = req.body;
+    const { id } = req.user;
+
+    if ([fullName, username, phone_no].some((field) => field?.trim() === "")) {
+        return res.status(400).json(
+            new ApiError(400, "Full name, username, and phone number are required.")
+        );
+    }
+
+    let hashedPassword;
+    if (password) {
+        hashedPassword = await passwordHasher(password);
+    }
+
+    const updateQuery = {
+        text: `
+            UPDATE Users 
+            SET fullName = $1, username = $2, phone_no = $3${password ? ', password = $4' : ''} 
+            WHERE id = $5 
+            RETURNING id, fullName, username, email, phone_no, createdAt;
+        `,
+        values: password ? [fullName, username, phone_no, hashedPassword, id] : [fullName, username, phone_no, id]
+    };
+
+    try {
+        const updatedUser = await pool.query(updateQuery);
+
+        if (!updatedUser.rowCount) {
+            return res.status(404).json(
+                new ApiError(404, "User not found.")
+            );
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, updatedUser.rows[0], "User information updated successfully.")
+        );
+    } catch (error) {
+        console.error("Error updating user information:", error);
+
+        return res.status(500).json(
+            new ApiError(500, "Failed to update user information.")
+        );
+    }
+});
+
+
 
 export {
     userRegister,
     userLogin,
     userLogout,
     refreshAccessToken,
-    getCurrentUser
+    getCurrentUser,
+    editUserInfo
 }
