@@ -6,7 +6,8 @@ import {
     ownerLogout,
     refreshAccessToken,
     getCurrentOwner,
-    registerTurf
+    registerTurf,
+    editOwnerInfo
 } from "../controllers/owner.controller.js";
 
 import { ownerTokenVerification } from "../middlewares/ownerTokenVerification.middleware.js";
@@ -20,7 +21,6 @@ router.route('/logout').post(ownerTokenVerification, ownerLogout);
 router.route('/refresh-token').post(refreshAccessToken);
 router.route('/get-current-owner').get(ownerTokenVerification, getCurrentOwner);
 router.route('/register-turf').post(ownerTokenVerification, upload.array('images', 3), registerTurf);
-
+router.route('/edit').patch(ownerTokenVerification, editOwnerInfo);
 
 export default router;
-

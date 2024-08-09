@@ -238,6 +238,54 @@ const registerTurf = asyncHandler( async (req, res) => {
     )
 })
 
+const editOwnerInfo = asyncHandler(async (req, res) => {
+    const { fullName, username, phone_no, password } = req.body;
+    const { id } = req.owner; // Assuming owner id is obtained from the authenticated owner
+
+    if ([fullName, username, phone_no].some((field) => field?.trim() === "")) {
+        return res.status(400).json(
+            new ApiError(400, "Full name, username, and phone number are required.")
+        );
+    }
+
+    // Hash the password if it's being updated
+    let hashedPassword;
+    if (password) {
+        hashedPassword = await passwordHasher(password);
+    }
+
+    const updateQuery = {
+        text: `
+            UPDATE Owners 
+            SET fullName = $1, username = $2, phone_no = $3${password ? ', password = $4' : ''} 
+            WHERE id = $5 
+            RETURNING id, fullName, username, email, phone_no, createdAt;
+        `,
+        values: password ? [fullName, username, phone_no, hashedPassword, id] : [fullName, username, phone_no, id]
+    };
+
+    try {
+        const updatedOwner = await pool.query(updateQuery);
+
+        if (!updatedOwner.rowCount) {
+            return res.status(404).json(
+                new ApiError(404, "Owner not found.")
+            );
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, updatedOwner.rows[0], "Owner information updated successfully.")
+        );
+    } catch (error) {
+        console.error("Error updating owner information:", error);
+
+        return res.status(500).json(
+            new ApiError(500, "Failed to update owner information.")
+        );
+    }
+});
+
+
 
 export { 
     registerOwner,
@@ -245,5 +293,6 @@ export {
     ownerLogout,
     refreshAccessToken,
     getCurrentOwner,
-    registerTurf
+    registerTurf,
+    editOwnerInfo
 }
