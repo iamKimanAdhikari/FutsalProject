@@ -9,7 +9,8 @@ import {
     userLogin,
     userLogout,
     refreshAccessToken,
-    getCurrentUser
+    getCurrentUser,
+    editUserInfo
 } from "../controllers/user.controller.js";
 
 router.route('/register').post(userRegister);
@@ -17,6 +18,7 @@ router.route('/login').post(userLogin);
 router.route('/logout').post(userTokenVerification, userLogout);
 router.route('/refresh-token').post(refreshAccessToken);
 router.route('/get-current-user').get(userTokenVerification, getCurrentUser);
+router.route('/edit').patch(userTokenVerification, editUserInfo)
 
 
 export default router;
